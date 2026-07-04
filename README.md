@@ -50,20 +50,15 @@ job description + user details
    ```bash
    npm run dev
    ```
-5. Test the pipeline:
-   ```bash
-   curl -X POST http://localhost:3000/api/generate \
-     -H "Content-Type: application/json" \
-     -d '{"jobDescription": "...", "userDetails": "..."}'
-   ```
+5. Open **http://localhost:3000** in your browser.
 
 ## Project structure
 
 ```
 backend/
-├── server.js            # Express entrypoint
-├── pipeline.js          # the 3-agent loop
-├── groqClient.js        # shared Groq API wrapper
+├── server.js            # Express entrypoint (serves API + frontend)
+├── pipeline.js          # the 3-agent loop + keyword coverage
+├── groqClient.js        # shared Groq API wrapper (+ mock mode)
 ├── agents/
 │   ├── extractor.js
 │   ├── writer.js
@@ -72,14 +67,34 @@ backend/
     ├── extractPrompt.js
     ├── writePrompt.js
     └── judgePrompt.js
+frontend/
+├── index.html           # the web app
+├── styles.css
+└── app.js               # streaming client + live pipeline UI
 ```
+
+## API
+
+- `GET /health` — health check (reports mock mode)
+- `POST /api/generate` — run the pipeline, returns the final JSON result
+- `POST /api/generate/stream` — same, but streams NDJSON progress events for the live UI
+
+Both POST endpoints take `{ "jobDescription": "...", "userDetails": "..." }`.
+
+## Mock mode
+
+Set `MOCK_MODE=true` in `.env` to run the entire app with canned responses —
+no API key needed, no rate limits used. The mock judge rejects the first
+draft and approves the second, so you can watch the full feedback loop.
 
 ## Roadmap
 
-- [ ] Frontend (Next.js) with form + live preview
-- [ ] PDF / DOCX export
+- [x] Frontend with live agent pipeline view
+- [x] Keyword coverage score against the job description
+- [x] Copy / download .md / print-to-PDF export
+- [ ] True DOCX export
 - [ ] User accounts + saved resumes
-- [ ] Keyword coverage score against the job description
+- [ ] Multiple resume templates
 
 ## License
 

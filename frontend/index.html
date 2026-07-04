@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Resume Builder — three agents, one ATS-ready resume</title>
+  <meta name="description" content="Paste a job description and your details. Three AI agents extract, write, and judge until your resume is ATS-ready." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="wordmark">Resume<mark>Forge</mark></div>
+    <a class="header-link" href="https://github.com/yrmfernandez/ai-resume-builder" target="_blank" rel="noopener">GitHub ↗</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Three agents argue over your resume <span class="hero-sub">so a recruiter doesn't have to.</span></h1>
+      <p class="hero-copy">Paste the job description and your details. An <strong>extractor</strong> pulls what matters, a <strong>writer</strong> drafts an ATS-friendly resume, and a <strong>judge</strong> rejects it until it's right.</p>
+    </section>
+
+    <section class="workspace" aria-label="Resume inputs">
+      <div class="input-grid">
+        <div class="field">
+          <label for="jobDescription">Job description</label>
+          <textarea id="jobDescription" rows="12" placeholder="Paste the full job posting here — requirements, responsibilities, everything."></textarea>
+          <span class="char-count" id="jdCount">0 / 15,000</span>
+        </div>
+        <div class="field">
+          <label for="userDetails">Your details</label>
+          <textarea id="userDetails" rows="12" placeholder="Your experience, education, skills, projects, contact info. Rough notes are fine — the extractor cleans it up."></textarea>
+          <span class="char-count" id="udCount">0 / 15,000</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="generateBtn" class="btn-primary">Generate resume</button>
+        <button id="sampleBtn" class="btn-ghost" type="button">Fill with sample data</button>
+      </div>
+      <p class="form-error" id="formError" role="alert" hidden></p>
+    </section>
+
+    <!-- Signature element: the live pipeline tracker -->
+    <section class="pipeline" id="pipeline" hidden aria-label="Agent pipeline progress" aria-live="polite">
+      <div class="pipeline-track">
+        <div class="agent" id="agent-extract">
+          <span class="agent-dot"></span>
+          <span class="agent-name">Extractor</span>
+          <span class="agent-model">gpt-oss-20b</span>
+        </div>
+        <span class="track-arrow">→</span>
+        <div class="agent" id="agent-write">
+          <span class="agent-dot"></span>
+          <span class="agent-name">Writer</span>
+          <span class="agent-model">gpt-oss-120b</span>
+        </div>
+        <span class="track-arrow">→</span>
+        <div class="agent" id="agent-judge">
+          <span class="agent-dot"></span>
+          <span class="agent-name">Judge</span>
+          <span class="agent-model">llama-3.3-70b</span>
+        </div>
+        <span class="loop-badge" id="loopBadge" hidden>rewrite loop ×<span id="loopCount">1</span></span>
+      </div>
+      <pre class="run-log" id="runLog" aria-label="Run log"></pre>
+    </section>
+
+    <section class="result" id="result" hidden aria-label="Generated resume">
+      <div class="result-header">
+        <div class="verdict">
+          <span class="verdict-badge" id="verdictBadge"></span>
+          <span class="verdict-meta" id="verdictMeta"></span>
+        </div>
+        <div class="result-actions">
+          <button class="btn-ghost" id="copyBtn" type="button">Copy markdown</button>
+          <button class="btn-ghost" id="downloadBtn" type="button">Download .md</button>
+          <button class="btn-ghost" id="printBtn" type="button">Print / save PDF</button>
+        </div>
+      </div>
+
+      <div class="keywords" id="keywordsPanel">
+        <span class="keywords-label" id="keywordsLabel"></span>
+        <div class="chips" id="keywordChips"></div>
+      </div>
+
+      <article class="resume-paper" id="resumePaper"></article>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    Built with a three-agent pipeline on <a href="https://groq.com" target="_blank" rel="noopener">Groq</a> · free tier, no cost to run
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

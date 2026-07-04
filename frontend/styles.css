@@ -1,0 +1,356 @@
+/* ---------------------------------------------------------------------------
+   ResumeForge — design tokens
+   Paper (the resume) meets terminal (the agents).
+--------------------------------------------------------------------------- */
+:root {
+  --paper: #f6f7f4;        /* cool paper background */
+  --surface: #ffffff;      /* cards / the resume sheet */
+  --ink: #16181d;          /* near-black ink */
+  --ink-soft: #5a5f6b;     /* secondary text */
+  --line: #dfe2da;         /* hairlines */
+  --highlight: #ffe45c;    /* the one accent: recruiter's highlighter */
+  --pass: #177e63;         /* judge approves */
+  --fail: #c4442a;         /* judge rejects */
+  --terminal: #16181d;     /* run log panel */
+  --terminal-text: #d7dbcf;
+
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px 96px;
+}
+
+/* --- header ------------------------------------------------------------- */
+.site-header {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.wordmark mark, .hero h1 mark {
+  background: var(--highlight);
+  padding: 0 0.15em;
+}
+
+.header-link {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.header-link:hover { color: var(--ink); }
+
+/* --- hero ---------------------------------------------------------------- */
+.hero { padding: 48px 0 40px; max-width: 720px; }
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.hero-sub { color: var(--ink-soft); font-weight: 700; }
+
+.hero-copy {
+  margin-top: 16px;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+.hero-copy strong { color: var(--ink); }
+
+/* --- workspace / inputs --------------------------------------------------- */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; position: relative; }
+
+.field label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+textarea {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 220px;
+}
+
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.char-count {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+.char-count.over { color: var(--fail); font-weight: 500; }
+
+.actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+
+.btn-primary {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--highlight);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 12px 28px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn-primary:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--ink); }
+.btn-primary:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn-primary:disabled { opacity: 0.55; cursor: wait; box-shadow: 3px 3px 0 var(--ink); }
+
+.btn-ghost {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+.btn-ghost:hover { border-color: var(--ink); }
+
+.form-error {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--fail);
+}
+
+/* --- pipeline tracker (signature) ----------------------------------------- */
+.pipeline { margin-top: 48px; }
+
+.pipeline-track {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+}
+
+.agent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.agent-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+  align-self: center;
+}
+.agent.running .agent-dot { background: var(--highlight); animation: pulse 1s infinite; }
+.agent.done .agent-dot { background: var(--pass); }
+.agent.failed .agent-dot { background: var(--fail); }
+.agent.running { border-color: var(--ink); }
+
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .agent.running .agent-dot { animation: none; }
+  .btn-primary { transition: none; }
+}
+
+.agent-name { font-family: var(--font-display); font-weight: 700; font-size: 0.92rem; }
+.agent-model { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-soft); }
+
+.track-arrow { color: var(--ink-soft); }
+
+.loop-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background: var(--ink);
+  color: var(--highlight);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.run-log {
+  background: var(--terminal);
+  color: var(--terminal-text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  border-radius: 8px;
+  padding: 18px 20px;
+  min-height: 96px;
+  max-height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.run-log .t-pass { color: #7fd8b4; }
+.run-log .t-fail { color: #f0937b; }
+.run-log .t-dim { opacity: 0.6; }
+
+/* --- result ---------------------------------------------------------------- */
+.result { margin-top: 40px; }
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.verdict { display: flex; align-items: center; gap: 12px; }
+
+.verdict-badge {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  color: #fff;
+}
+.verdict-badge.pass { background: var(--pass); }
+.verdict-badge.fail { background: var(--fail); }
+
+.verdict-meta { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); }
+
+.result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.keywords { margin-bottom: 20px; }
+
+.keywords-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.chip.matched { background: var(--highlight); border-color: var(--ink); }
+.chip.missing { color: var(--ink-soft); text-decoration: line-through; }
+
+/* the resume sheet itself — styled like paper */
+.resume-paper {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 48px 52px;
+  box-shadow: 0 2px 12px rgba(22, 24, 29, 0.06);
+  font-size: 0.95rem;
+}
+
+.resume-paper h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.resume-paper h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 24px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--ink);
+}
+.resume-paper h3 { font-size: 1rem; margin: 12px 0 4px; }
+.resume-paper p { margin: 6px 0; }
+.resume-paper ul { margin: 6px 0 6px 20px; }
+.resume-paper li { margin: 3px 0; }
+
+/* --- footer ----------------------------------------------------------------- */
+.site-footer {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--line);
+}
+.site-footer a { color: var(--ink); }
+
+/* --- responsive --------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .input-grid { grid-template-columns: 1fr; }
+  .resume-paper { padding: 28px 22px; }
+  .track-arrow { display: none; }
+}
+
+/* --- print: only the resume sheet, as a clean document ------------------------ */
+@media print {
+  body * { visibility: hidden; }
+  .resume-paper, .resume-paper * { visibility: visible; }
+  .resume-paper {
+    position: absolute;
+    inset: 0;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}
