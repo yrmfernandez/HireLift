@@ -55,7 +55,7 @@ job description + user details
    npm install
    ```
 2. Get a free Groq API key at [console.groq.com](https://console.groq.com) (no credit card required).
-3. Copy `.env.example` to `.env` and add your key:
+3. Copy `.env.example` to `.env` (from inside `backend/`) and add your key:
    ```bash
    cp .env.example .env
    # then edit .env and set GROQ_API_KEY
@@ -66,11 +66,29 @@ job description + user details
    ```
 5. Open **http://localhost:3000** in your browser.
 
+## Deploying to Vercel
+
+The backend is set up to deploy as a single Vercel Function, with the frontend served as static assets from `backend/public/`.
+
+1. **Push this repo to GitHub** (if it isn't already) and import it in [Vercel](https://vercel.com/new).
+2. **Set the Root Directory to `backend`** in the Vercel project's Import/Settings screen. This matters because our repo is a monorepo (`backend/` + its nested `public/`) — pointing Vercel's root at `backend/` lets it find `server.js`, `package.json`, and `public/` exactly where it expects them, with zero extra build config.
+3. **Add environment variables** in Project Settings → Environment Variables (do **not** commit a real `.env` file):
+   - `GROQ_API_KEY` — your Groq key
+   - `MOCK_MODE` — `false` for real AI calls, or `true` to demo without burning API calls
+4. Deploy. Vercel auto-detects the Express app (`server.js` exports the app; `backend/vercel.json` sets `maxDuration: 60` so a full 5-agent pipeline run has enough time to finish — see notes below).
+
+**Things that matter for this project specifically, since it isn't a typical CRUD app:**
+
+- **Function timeout:** a full pipeline run (Extractor → Writer/Judge loop → Coach → Roles) makes several sequential Groq calls and can take a while, especially on retries. `backend/vercel.json` raises the timeout to 60 seconds (the max on Vercel's free Hobby tier without Fluid Compute extensions). If you still see `504 FUNCTION_INVOCATION_TIMEOUT` under real traffic, either enable Fluid Compute for a longer default duration or upgrade to Pro for a higher `maxDuration` ceiling.
+- **Upload size:** Vercel hard-caps request bodies at 4.5 MB for serverless functions. The resume-upload limit is set to 4 MB in `server.js` to stay safely under that — don't raise it back to the old 5 MB unless you move file uploads off Vercel Functions (e.g. direct-to-storage uploads).
+- **Cold starts:** the first request after inactivity will be slower (Node process + dependency init). This is normal for serverless and not something to "fix."
+- **Save/restore is per-browser:** since it uses `localStorage`, it works identically in production — nothing server-side to configure for that feature.
+
 ## Project structure
 
 ```
 backend/
-├── server.js            # Express entrypoint (serves API + frontend)
+├── server.js            # Express entrypoint (serves API + frontend, exports app for Vercel)
 ├── pipeline.js          # the 3-agent loop + keyword coverage
 ├── groqClient.js        # shared Groq API wrapper (+ mock mode)
 ├── agents/
@@ -81,18 +99,20 @@ backend/
 │   ├── roles.js         # role/title recommendations
 │   ├── suggester.js     # per-section suggestions
 │   └── resumeParser.js  # parse uploaded resumes
-└── prompts/
-    ├── extractPrompt.js
-    ├── writePrompt.js
-    ├── judgePrompt.js
-    ├── coachPrompt.js
-    ├── rolesPrompt.js
-    ├── suggestPrompt.js
-    └── parseResumePrompt.js
-frontend/
-├── index.html           # the web app
-├── styles.css
-└── app.js               # streaming client + live pipeline UI
+├── prompts/
+│   ├── extractPrompt.js
+│   ├── writePrompt.js
+│   ├── judgePrompt.js
+│   ├── coachPrompt.js
+│   ├── rolesPrompt.js
+│   ├── suggestPrompt.js
+│   └── parseResumePrompt.js
+├── vercel.json          # Vercel function config (timeout)
+├── .env.example
+└── public/              # the web app — served as static assets on Vercel
+    ├── index.html
+    ├── styles.css
+    └── app.js           # streaming client + live pipeline UI
 ```
 
 ## API

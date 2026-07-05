@@ -16,7 +16,10 @@ const require = createRequire(import.meta.url);
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB cap
+  // Kept under Vercel's hard 4.5 MB request-body limit for serverless
+  // functions (with headroom for multipart overhead). If you deploy
+  // elsewhere without that limit, this can be raised.
+  limits: { fileSize: 4 * 1024 * 1024 },
 });
 import {
   AlignmentType,
@@ -35,8 +38,10 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-// Serve the frontend
-app.use(express.static(path.join(__dirname, "../frontend")));
+// Serve the frontend. On Vercel this is a no-op in production (static
+// assets in backend/public/ are served directly by Vercel's CDN via the
+// zero-config Express convention); locally this still serves the files.
+app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT || 3000;
 
@@ -305,7 +310,17 @@ async function extractResumeText(file) {
 }
 
 // Upload an existing resume -> extract text -> parse into structured fields.
-app.post("/api/parse-resume", upload.single("resume"), async (req, res) => {
+app.post("/api/parse-resume", (req, res, next) => {
+  upload.single("resume")(req, res, (err) => {
+    if (err) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({ error: "That file is too large. Please upload a resume under 4 MB." });
+      }
+      return res.status(400).json({ error: err.message || "Could not read the uploaded file." });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded. Attach a resume file named 'resume'." });
   }
@@ -327,7 +342,15 @@ app.post("/api/parse-resume", upload.single("resume"), async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  const mock = process.env.MOCK_MODE === "true" ? " (MOCK MODE)" : "";
-  console.log(`AI Resume Builder running on http://localhost:${PORT}${mock}`);
-});
+// Only bind to a port when running as a long-lived process (local dev,
+// or any traditional host). On Vercel, the platform imports `app` directly
+// and calls it per-request instead — VERCEL is a reserved env var Vercel
+// sets automatically, so this check needs no extra configuration.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    const mock = process.env.MOCK_MODE === "true" ? " (MOCK MODE)" : "";
+    console.log(`AI Resume Builder running on http://localhost:${PORT}${mock}`);
+  });
+}
+
+export default app;
