@@ -126,5 +126,28 @@ Python, SQL, pandas, machine learning, data visualization
     return JSON.stringify({ approved: true, score: 88, feedback: "" });
   }
 
+  if (agent === "coach") {
+    return JSON.stringify({
+      focusAreas: [
+        { topic: "TensorFlow fundamentals", why: "Listed as a core requirement and missing from your background", priority: "high" },
+        { topic: "Data visualization (Matplotlib/Tableau)", why: "The role emphasizes communicating findings to stakeholders", priority: "high" },
+        { topic: "SQL query optimization", why: "You have SQL basics; this role needs production-level data work", priority: "medium" },
+      ],
+      skillsToStrengthen: ["TensorFlow / deep learning basics", "Data storytelling & dashboards", "Explaining ML models to non-technical audiences"],
+      quickWins: [
+        "Build one small TensorFlow project (e.g. an image or text classifier) and put it on GitHub",
+        "Add a Tableau or Matplotlib dashboard to your churn project to show visualization skills",
+        "Write a short README explaining your churn model's business impact",
+      ],
+      interviewQuestions: [
+        { question: "Walk me through your churn prediction project.", answerGuidance: "Use the STAR structure. Emphasize the 18% targeting improvement and the business decision it enabled, not just the model." },
+        { question: "How would you explain a machine learning model to a non-technical manager?", answerGuidance: "Pick a simple analogy. Reference how you presented findings to management during your internship." },
+        { question: "What's the difference between supervised and unsupervised learning?", answerGuidance: "Give crisp definitions plus one example each; mention which you used in your projects." },
+        { question: "Tell me about a time you worked with messy data.", answerGuidance: "Behavioral — describe a cleaning/wrangling situation from a project, the steps you took, and the outcome." },
+      ],
+      resourceSuggestions: ["TensorFlow official tutorials", "Kaggle Learn micro-courses", "StatQuest (YouTube) for ML intuition", "Google Data Analytics resources for visualization"],
+    });
+  }
+
   throw new Error(`Unknown mock agent: ${agent}`);
 }

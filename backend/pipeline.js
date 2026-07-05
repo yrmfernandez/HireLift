@@ -1,6 +1,7 @@
 import { extract } from "./agents/extractor.js";
 import { write } from "./agents/writer.js";
 import { judge } from "./agents/judge.js";
+import { coach } from "./agents/coach.js";
 
 const MAX_ITERATIONS = 3;
 
@@ -20,17 +21,18 @@ export function keywordCoverage(keywords = [], resumeText = "") {
 }
 
 /**
- * Runs the full three-agent pipeline:
- *   Extractor -> (Writer -> Judge) loop, bounded by MAX_ITERATIONS.
+ * Runs the full pipeline:
+ *   Extractor -> (Writer -> Judge) loop -> Coach.
  *
- * Returns the approved resume, or the best-scoring draft if the judge never
- * approves within the iteration cap. The loop is ALWAYS bounded so it can
- * never run forever.
+ * The Writer/Judge loop is bounded by MAX_ITERATIONS so it can never run
+ * forever. After the resume is finalized, the Coach produces a tailored
+ * "how to get hired" plan. If the Coach fails, the resume is still returned
+ * (the plan is optional and must never block the core deliverable).
  *
  * @param {string} jobDescription
  * @param {string} userDetails
  * @param {(event: Object) => void} [onProgress] - called with stage events for live UI updates
- * @returns {Promise<{resume: string, approved: boolean, score: number, iterations: number, history: Array, keywords: Object}>}
+ * @returns {Promise<Object>} { resume, approved, score, iterations, history, keywords, coaching }
  */
 export async function generateResume(jobDescription, userDetails, onProgress = () => {}) {
   onProgress({ stage: "extract", status: "running" });
@@ -42,7 +44,7 @@ export async function generateResume(jobDescription, userDetails, onProgress = (
   });
 
   let feedback = "";
-  let best = { resume: null, score: -1, approved: false };
+  let best = { resume: null, score: -1, approved: false, iterations: MAX_ITERATIONS };
   const history = [];
 
   for (let i = 1; i <= MAX_ITERATIONS; i++) {
@@ -64,28 +66,39 @@ export async function generateResume(jobDescription, userDetails, onProgress = (
 
     // Track the best draft so far, so we never return something worse.
     if (verdict.score > best.score) {
-      best = { resume: draft, score: verdict.score, approved: verdict.approved };
+      best = { resume: draft, score: verdict.score, approved: verdict.approved, iterations: i };
     }
 
     if (verdict.approved) {
-      return finalize(draft, true, verdict.score, i, history, extracted);
+      best = { resume: draft, score: verdict.score, approved: true, iterations: i };
+      break;
     }
 
     // Feed specific feedback into the next rewrite.
     feedback = verdict.feedback;
   }
 
-  // Judge never approved within the cap — return the best effort.
-  return finalize(best.resume, false, best.score, MAX_ITERATIONS, history, extracted);
-}
+  const keywords = keywordCoverage(extracted.keywordsFromJob, best.resume);
 
-function finalize(resume, approved, score, iterations, history, extracted) {
+  // Agent 4: the Coach — tailored hiring-prep plan. Optional: never let a
+  // coach failure sink the resume the user already waited for.
+  let coaching = null;
+  onProgress({ stage: "coach", status: "running" });
+  try {
+    coaching = await coach(jobDescription, extracted, keywords);
+    onProgress({ stage: "coach", status: "done" });
+  } catch (err) {
+    console.error("[pipeline] coach failed (non-fatal):", err.message);
+    onProgress({ stage: "coach", status: "failed", detail: "Prep plan unavailable" });
+  }
+
   return {
-    resume,
-    approved,
-    score,
-    iterations,
+    resume: best.resume,
+    approved: best.approved,
+    score: best.score,
+    iterations: best.iterations,
     history,
-    keywords: keywordCoverage(extracted.keywordsFromJob, resume),
+    keywords,
+    coaching,
   };
 }

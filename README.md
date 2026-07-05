@@ -4,11 +4,12 @@ An ATS-friendly resume builder powered by a three-agent AI pipeline running on [
 
 ## How it works
 
-The core is a **reflection / LLM-as-judge** pipeline with three agents:
+The core is a **reflection / LLM-as-judge** pipeline with four agents:
 
 1. **Extractor** — reads the job description + the user's raw details and pulls out the valuable, relevant information as structured JSON.
 2. **Writer** — drafts an ATS-friendly resume from the extracted data.
 3. **Judge** — evaluates the draft against ATS + quality criteria. If it fails, its feedback is passed back to the Writer, which revises. This loops until the Judge approves or a max-iteration cap is reached.
+4. **Coach** — after the resume is finalized, produces a tailored "how to get hired" plan for the target job: what to study, skills to strengthen, quick wins, and likely interview questions with answer guidance. Runs once; if it fails, the resume is still returned.
 
 ```
 job description + user details
@@ -24,14 +25,17 @@ job description + user details
         │
       pass
         ▼
-   final resume
+   [ Coach ]  → tailored hiring-prep plan
+        │
+        ▼
+   final resume + prep plan
 ```
 
 ## Tech stack
 
 - **Backend:** Node.js + Express
 - **AI:** Groq API (OpenAI-SDK compatible), free tier
-- **Models:** `openai/gpt-oss-20b` (extractor), `openai/gpt-oss-120b` (writer), `llama-3.3-70b-versatile` (judge)
+- **Models:** `openai/gpt-oss-20b` (extractor), `openai/gpt-oss-120b` (writer + coach), `llama-3.3-70b-versatile` (judge)
 
 ## Setup
 
@@ -62,11 +66,13 @@ backend/
 ├── agents/
 │   ├── extractor.js
 │   ├── writer.js
-│   └── judge.js
+│   ├── judge.js
+│   └── coach.js
 └── prompts/
     ├── extractPrompt.js
     ├── writePrompt.js
-    └── judgePrompt.js
+    ├── judgePrompt.js
+    └── coachPrompt.js
 frontend/
 ├── index.html           # the web app
 ├── styles.css
@@ -92,6 +98,7 @@ draft and approves the second, so you can watch the full feedback loop.
 - [x] Frontend with live agent pipeline view
 - [x] Keyword coverage score against the job description
 - [x] Copy / download .md / print-to-PDF export
+- [x] Coach agent — tailored hiring-prep plan & interview questions
 - [ ] True DOCX export
 - [ ] User accounts + saved resumes
 - [ ] Multiple resume templates

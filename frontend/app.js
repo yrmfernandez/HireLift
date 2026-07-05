@@ -24,7 +24,12 @@ const els = {
   copyBtn: $("copyBtn"),
   downloadBtn: $("downloadBtn"),
   printBtn: $("printBtn"),
+  coaching: $("coaching"),
+  coachingGrid: $("coachingGrid"),
+  copyPlanBtn: $("copyPlanBtn"),
 };
+
+let lastPlan = null;
 
 const MAX_CHARS = 15000;
 let lastMarkdown = "";
@@ -88,7 +93,7 @@ function log(text, cls = "") {
 }
 
 function setAgent(stage, state) {
-  const map = { extract: "agent-extract", write: "agent-write", judge: "agent-judge" };
+  const map = { extract: "agent-extract", write: "agent-write", judge: "agent-judge", coach: "agent-coach" };
   const el = $(map[stage]);
   if (!el) return;
   el.classList.remove("running", "done", "failed");
@@ -98,9 +103,10 @@ function setAgent(stage, state) {
 function resetPipelineUI() {
   els.runLog.innerHTML = "";
   els.loopBadge.hidden = true;
-  ["extract", "write", "judge"].forEach((s) => setAgent(s, null));
+  ["extract", "write", "judge", "coach"].forEach((s) => setAgent(s, null));
   els.pipeline.hidden = false;
   els.result.hidden = true;
+  els.coaching.hidden = true;
   els.formError.hidden = true;
 }
 
@@ -130,6 +136,12 @@ function handleEvent(ev) {
       log(`judge: REJECTED — score ${ev.score}/100`, "t-fail");
       if (ev.feedback) log(`judge feedback: ${escapeHtml(ev.feedback)}`, "t-dim");
     }
+  }
+
+  if (ev.stage === "coach") {
+    if (ev.status === "running") { setAgent("coach", "running"); log("coach: building your tailored prep plan…"); }
+    else if (ev.status === "failed") { setAgent("coach", "failed"); log("coach: prep plan unavailable (resume still ready)", "t-fail"); }
+    else { setAgent("coach", "done"); log("coach: prep plan ready", "t-pass"); }
   }
 
   if (ev.stage === "done") showResult(ev.result);
@@ -216,6 +228,92 @@ function showResult(result) {
   els.resumePaper.innerHTML = renderMarkdown(lastMarkdown);
   els.result.hidden = false;
   els.result.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  renderCoaching(result.coaching);
+}
+
+/* --- coaching / prep plan rendering ---------------------------------------- */
+function renderCoaching(plan) {
+  lastPlan = plan;
+  if (!plan) { els.coaching.hidden = true; return; }
+
+  const cards = [];
+
+  if (plan.focusAreas?.length) {
+    const items = plan.focusAreas.map((f) => {
+      const p = (f.priority || "medium").toLowerCase();
+      return `<div class="focus-item ${p}">
+        <span class="focus-topic">${esc(f.topic)}</span><span class="priority-tag ${p}">${esc(p)}</span>
+        <div class="focus-why">${esc(f.why)}</div>
+      </div>`;
+    }).join("");
+    cards.push(`<div class="coach-card span-2"><h3><span class="icon">🎯</span>What to focus on</h3>${items}</div>`);
+  }
+
+  if (plan.skillsToStrengthen?.length) {
+    cards.push(listCard("💪", "Skills to strengthen", plan.skillsToStrengthen));
+  }
+
+  if (plan.quickWins?.length) {
+    cards.push(listCard("⚡", "Quick wins", plan.quickWins));
+  }
+
+  if (plan.interviewQuestions?.length) {
+    const qa = plan.interviewQuestions.map((q) =>
+      `<div class="qa-item"><div class="qa-q">${esc(q.question)}</div><div class="qa-a">${esc(q.answerGuidance)}</div></div>`
+    ).join("");
+    cards.push(`<div class="coach-card span-2"><h3><span class="icon">💬</span>Likely interview questions</h3>${qa}</div>`);
+  }
+
+  if (plan.resourceSuggestions?.length) {
+    cards.push(listCard("📚", "Resources", plan.resourceSuggestions, "span-2"));
+  }
+
+  els.coachingGrid.innerHTML = cards.join("");
+  els.coaching.hidden = false;
+}
+
+function listCard(icon, title, items, span = "") {
+  const lis = items.map((i) => `<li>${esc(i)}</li>`).join("");
+  return `<div class="coach-card ${span}"><h3><span class="icon">${icon}</span>${esc(title)}</h3><ul>${lis}</ul></div>`;
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* --- copy plan as text ----------------------------------------------------- */
+function planToText(plan) {
+  if (!plan) return "";
+  const lines = ["YOUR PREP PLAN", ""];
+  if (plan.focusAreas?.length) {
+    lines.push("WHAT TO FOCUS ON");
+    plan.focusAreas.forEach((f) => lines.push(`- [${(f.priority || "").toUpperCase()}] ${f.topic}: ${f.why}`));
+    lines.push("");
+  }
+  if (plan.skillsToStrengthen?.length) {
+    lines.push("SKILLS TO STRENGTHEN");
+    plan.skillsToStrengthen.forEach((s) => lines.push(`- ${s}`));
+    lines.push("");
+  }
+  if (plan.quickWins?.length) {
+    lines.push("QUICK WINS");
+    plan.quickWins.forEach((s) => lines.push(`- ${s}`));
+    lines.push("");
+  }
+  if (plan.interviewQuestions?.length) {
+    lines.push("LIKELY INTERVIEW QUESTIONS");
+    plan.interviewQuestions.forEach((q) => {
+      lines.push(`Q: ${q.question}`);
+      lines.push(`   How to answer: ${q.answerGuidance}`);
+    });
+    lines.push("");
+  }
+  if (plan.resourceSuggestions?.length) {
+    lines.push("RESOURCES");
+    plan.resourceSuggestions.forEach((s) => lines.push(`- ${s}`));
+  }
+  return lines.join("\n");
 }
 
 function addChip(text, cls) {
@@ -277,3 +375,9 @@ els.downloadBtn.addEventListener("click", () => {
 });
 
 els.printBtn.addEventListener("click", () => window.print());
+
+els.copyPlanBtn.addEventListener("click", async () => {
+  await navigator.clipboard.writeText(planToText(lastPlan));
+  els.copyPlanBtn.textContent = "Copied ✓";
+  setTimeout(() => (els.copyPlanBtn.textContent = "Copy plan"), 1500);
+});

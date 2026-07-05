@@ -63,6 +63,12 @@
           <span class="agent-name">Judge</span>
           <span class="agent-model">llama-3.3-70b</span>
         </div>
+        <span class="track-arrow">→</span>
+        <div class="agent" id="agent-coach">
+          <span class="agent-dot"></span>
+          <span class="agent-name">Coach</span>
+          <span class="agent-model">gpt-oss-120b</span>
+        </div>
         <span class="loop-badge" id="loopBadge" hidden>rewrite loop ×<span id="loopCount">1</span></span>
       </div>
       <pre class="run-log" id="runLog" aria-label="Run log"></pre>
@@ -87,6 +93,16 @@
       </div>
 
       <article class="resume-paper" id="resumePaper"></article>
+    </section>
+
+    <!-- Coach: tailored "how to get hired" prep plan -->
+    <section class="coaching" id="coaching" hidden aria-label="How to get hired">
+      <div class="coaching-head">
+        <h2>Your prep plan</h2>
+        <p>Tailored to this job — what to study, strengthen, and expect in interviews.</p>
+        <button class="btn-ghost" id="copyPlanBtn" type="button">Copy plan</button>
+      </div>
+      <div class="coaching-grid" id="coachingGrid"></div>
     </section>
   </main>
 
