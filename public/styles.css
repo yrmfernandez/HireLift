@@ -775,6 +775,11 @@ input[type="tel"] {
 .resume-paper p { margin: 6px 0; }
 .resume-paper ul { margin: 6px 0 6px 20px; }
 .resume-paper li { margin: 3px 0; }
+.resume-paper .resume-rule {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
+}
 
 /* --- before you apply ---------------------------------------------------- */
 .coaching {
@@ -1158,7 +1163,6 @@ input[type="tel"] {
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border: 1px solid var(--glass-border);
-  border-left: 4px solid var(--accent);
   border-radius: 16px;
   box-shadow: var(--shadow-md);
 }

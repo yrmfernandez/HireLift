@@ -19,6 +19,7 @@ const upload = multer({
 });
 import {
   AlignmentType,
+  BorderStyle,
   Document,
   HeadingLevel,
   Packer,
@@ -194,10 +195,8 @@ function validateExportBody(body) {
 
 function cleanMarkdownText(text) {
   return text
-    .replace(/^\s*([-*_])\1{2,}\s*$/gm, "")  // drop horizontal-rule separator lines
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/\*(.*?)\*/g, "$1")
-    .replace(/\n{3,}/g, "\n\n")               // collapse the blank gap the rule left
     .trim();
 }
 
@@ -207,6 +206,17 @@ function markdownToDocxParagraphs(markdown) {
 
     if (!line) {
       return new Paragraph({ text: "" });
+    }
+
+    // A markdown horizontal rule (---, ***, ___) becomes a thin bottom border —
+    // Word's way of drawing a separator line between sections.
+    if (/^([-*_])\1{2,}$/.test(line)) {
+      return new Paragraph({
+        text: "",
+        border: {
+          bottom: { color: "999999", space: 1, style: BorderStyle.SINGLE, size: 6 },
+        },
+      });
     }
 
     if (line.startsWith("# ")) {
@@ -251,6 +261,21 @@ function writeMarkdownToPdf(doc, markdown) {
     const line = rawLine.trim();
 
     if (!line) {
+      doc.moveDown(0.5);
+      continue;
+    }
+
+    // A markdown horizontal rule (---, ***, ___) draws a separator line.
+    if (/^([-*_])\1{2,}$/.test(line)) {
+      doc.moveDown(0.3);
+      doc
+        .save()
+        .strokeColor("#bbbbbb")
+        .lineWidth(0.5)
+        .moveTo(doc.x, doc.y)
+        .lineTo(540, doc.y)
+        .stroke()
+        .restore();
       doc.moveDown(0.5);
       continue;
     }

@@ -902,7 +902,7 @@ function renderMarkdown(md) {
     if (/^###\s+/.test(line)) { closeList(); html += `<h3>${inline(line.replace(/^###\s+/, ""))}</h3>`; }
     else if (/^##\s+/.test(line)) { closeList(); html += `<h2>${inline(line.replace(/^##\s+/, ""))}</h2>`; }
     else if (/^#\s+/.test(line)) { closeList(); html += `<h1>${inline(line.replace(/^#\s+/, ""))}</h1>`; }
-    else if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { closeList(); /* skip markdown horizontal rules (---, ***, ___) — unnecessary in a resume */ }
+    else if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { closeList(); html += `<hr class="resume-rule" />`; }
     else if (/^[-*]\s+/.test(line)) {
       if (!inList) { html += "<ul>"; inList = true; }
       html += `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`;
