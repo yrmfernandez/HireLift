@@ -421,13 +421,19 @@ app.post("/api/suggest", async (req, res) => {
 // Collapse the whitespace mess that PDF and DOCX text extraction often
 // produce (runs of blank lines, trailing spaces, non-breaking spaces),
 // while preserving real line breaks that separate sections and bullets.
+// Also strips genuine noise (decorative rule lines, page markers, bullet
+// glyphs) so those characters don't waste tokens against the model's TPM
+// budget — every character removed here is input the parser no longer pays for.
 function normalizeResumeText(raw) {
   return raw
-    .replace(/\r\n?/g, "\n")        // normalize line endings
-    .replace(/\u00a0/g, " ")        // non-breaking spaces -> normal spaces
-    .replace(/[ \t]+/g, " ")        // collapse runs of spaces/tabs
-    .replace(/ *\n */g, "\n")       // trim spaces around newlines
-    .replace(/\n{3,}/g, "\n\n")     // cap consecutive blank lines
+    .replace(/\r\n?/g, "\n")                       // normalize line endings
+    .replace(/\u00a0/g, " ")                       // non-breaking spaces -> normal
+    .replace(/[•▪◦‣·–—*]\s+/g, "- ")               // unify bullet glyphs to "- "
+    .replace(/^[\s>|]*[-_=~*═─━]{3,}[\s>|]*$/gm, "")   // drop decorative rule lines
+    .replace(/^\s*Page\s+\d+\s*(of\s+\d+)?\s*$/gim, "") // drop "Page 1 of 2" markers
+    .replace(/[ \t]+/g, " ")                       // collapse runs of spaces/tabs
+    .replace(/ *\n */g, "\n")                      // trim spaces around newlines
+    .replace(/\n{3,}/g, "\n\n")                    // cap consecutive blank lines
     .trim();
 }
 
@@ -487,11 +493,13 @@ app.post("/api/parse-resume", (req, res, next) => {
       });
     }
 
-    // 20b has generous free-tier TPM, so we can send most of a resume.
-    // 12000 chars (~3000 tokens) covers virtually all single-page and most
-    // two-page resumes without truncating later sections (skills/projects
-    // often sit at the bottom).
-    const resumeText = text.slice(0, 12000);
+    // gpt-oss-20b is capped at 8000 TPM (input + output combined). The parser
+    // prompt is ~800 tokens and we reserve up to ~2400 for the structured JSON
+    // output, so the resume text must stay well under the remainder. 8000 chars
+    // (~2200 tokens) keeps the whole call safely under budget while still
+    // covering virtually all one-page and most two-page resumes. Longer inputs
+    // are truncated here rather than risking a 413 mid-request.
+    const resumeText = text.slice(0, 8000);
 
     // Debug logging: lets you see whether a failed extraction is caused by a
     // bad file read (garbled/empty text) vs. a bad model parse. Check your
