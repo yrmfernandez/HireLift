@@ -1147,6 +1147,7 @@ input[type="tel"] {
     box-shadow: none;
     padding: 0;
   }
+}
 
 /* Clean user-facing build progress */
 .build-status {
@@ -1204,6 +1205,4 @@ input[type="tel"] {
 .build-status-footer,
 .build-details-toggle {
   display: none !important;
-}
-
 }

@@ -487,12 +487,16 @@ function setAgent(stage, state) {
   if (state) el.classList.add(state);
 }
 
+// Highest progress % shown this run; keeps the bar monotonic (see setBuildProgress).
+let lastProgressPercent = 0;
+
 function resetPipelineUI() {
   els.runLog.innerHTML = "";
   els.loopBadge.hidden = true;
   ["extract", "write", "judge", "coach", "roles"].forEach((s) => setAgent(s, null));
   els.pipeline.hidden = false;
-  setBuildProgress(8, "Starting...");
+  lastProgressPercent = 0;
+  setBuildProgress(8, "Starting...", { allowReset: true });
   els.buildTitle.textContent = "Building your resume";
   els.buildSubtitle.textContent = "Please keep this tab open while HireLift prepares your resume.";
   els.result.hidden = true;
@@ -502,12 +506,19 @@ function resetPipelineUI() {
 }
 
 /* --- progress event handling ----------------------------------------------- */
-function setBuildProgress(percent, label) {
+// The writer/judge loop can revisit earlier stages (e.g. a rejected draft goes
+// back to "writing"), which would otherwise make the bar lurch backward and
+// look broken. We track the highest percent shown and never go below it, so
+// progress only ever moves forward. resetPipelineUI() clears this per run.
+function setBuildProgress(percent, label, { allowReset = false } = {}) {
+  const target = allowReset ? percent : Math.max(percent, lastProgressPercent);
+  lastProgressPercent = target;
+
   if (els.buildProgressBar) {
-    els.buildProgressBar.style.width = `${percent}%`;
+    els.buildProgressBar.style.width = `${target}%`;
   }
 
-  if (els.buildProgressLabel) {
+  if (els.buildProgressLabel && label) {
     els.buildProgressLabel.textContent = label;
   }
 }
@@ -530,30 +541,37 @@ function handleEvent(ev) {
     return;
   }
   
+  // The writer/judge loop can run up to 3 times. To keep the bar moving forward
+  // through retries (instead of freezing), we spread the write+judge phase
+  // across the 40–86% band and nudge it a little further each iteration. The
+  // monotonic setBuildProgress guarantees it never slides backward.
+  const iter = Math.max(1, ev.iteration || 1);
+  const iterNudge = Math.min((iter - 1) * 6, 18); // +0, +6, +12 for iterations 1–3
+
   const progressMap = {
     extract: ev.status === "running"
       ? [22, "Reading your job post and details..."]
       : [36, "Finding the important details..."],
-  
+
     write: ev.status === "running"
-      ? [50, "Drafting your resume..."]
-      : [64, "Checking the draft..."],
-  
+      ? [46 + iterNudge, iter > 1 ? `Revising your resume (attempt ${iter})...` : "Drafting your resume..."]
+      : [56 + iterNudge, "Checking the draft..."],
+
     judge: ev.status === "running"
-      ? [76, "Reviewing resume quality..."]
+      ? [64 + iterNudge, "Reviewing resume quality..."]
       : ev.approved
         ? [88, "Almost done..."]
-        : [78, "Improving the resume..."],
-  
+        : [70 + iterNudge, "Improving the resume..."],
+
     coach: ev.status === "running"
       ? [92, "Preparing final suggestions..."]
       : [96, "Finalizing..."],
-  
+
     roles: ev.status === "running"
       ? [97, "Matching role ideas..."]
       : [98, "Finishing up..."],
   };
-  
+
   if (progressMap[ev.stage]) {
     setBuildProgress(progressMap[ev.stage][0], progressMap[ev.stage][1]);
   }
@@ -884,6 +902,7 @@ function renderMarkdown(md) {
     if (/^###\s+/.test(line)) { closeList(); html += `<h3>${inline(line.replace(/^###\s+/, ""))}</h3>`; }
     else if (/^##\s+/.test(line)) { closeList(); html += `<h2>${inline(line.replace(/^##\s+/, ""))}</h2>`; }
     else if (/^#\s+/.test(line)) { closeList(); html += `<h1>${inline(line.replace(/^#\s+/, ""))}</h1>`; }
+    else if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { closeList(); /* skip markdown horizontal rules (---, ***, ___) — unnecessary in a resume */ }
     else if (/^[-*]\s+/.test(line)) {
       if (!inList) { html += "<ul>"; inList = true; }
       html += `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`;

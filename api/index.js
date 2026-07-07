@@ -194,8 +194,10 @@ function validateExportBody(body) {
 
 function cleanMarkdownText(text) {
   return text
+    .replace(/^\s*([-*_])\1{2,}\s*$/gm, "")  // drop horizontal-rule separator lines
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/\*(.*?)\*/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")               // collapse the blank gap the rule left
     .trim();
 }
 
