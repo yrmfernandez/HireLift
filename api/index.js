@@ -520,21 +520,32 @@ app.post("/api/parse-resume", (req, res, next) => {
       });
     }
 
-    // gpt-oss-20b is capped at 8000 TPM (input + output combined). The parser
-    // prompt is ~800 tokens and we reserve up to ~2400 for the structured JSON
-    // output, so the resume text must stay well under the remainder. 8000 chars
-    // (~2200 tokens) keeps the whole call safely under budget while still
-    // covering virtually all one-page and most two-page resumes. Longer inputs
-    // are truncated here rather than risking a 413 mid-request.
+    // Flag when the resume was long enough that we had to truncate it. If the
+    // parse then fails, this tells us to blame length and advise the user
+    // accordingly rather than showing a generic error.
+    const wasTruncated = text.length > 8000;
     const resumeText = text.slice(0, 8000);
 
     // Debug logging: lets you see whether a failed extraction is caused by a
     // bad file read (garbled/empty text) vs. a bad model parse. Check your
     // server console after an upload.
-    console.log("[/api/parse-resume] extracted text length:", text.length);
+    console.log("[/api/parse-resume] extracted text length:", text.length, wasTruncated ? "(truncated to 8000)" : "");
     console.log("[/api/parse-resume] text preview:\n", resumeText.slice(0, 500));
 
-    const parsed = await parseResume(resumeText);
+    let parsed;
+    try {
+      parsed = await parseResume(resumeText);
+    } catch (parseErr) {
+      // The model couldn't turn this resume into clean data. The most common
+      // reason is a long or dense resume, so we give the user an actionable
+      // next step instead of a vague "temporary error".
+      console.error("[/api/parse-resume] parse failed:", parseErr.message);
+      const hint = wasTruncated
+        ? "Your resume looks quite long. Try uploading a shorter version (1–2 pages), or paste your details into the form manually."
+        : "We couldn't read this resume automatically. Try a simpler, text-based file (1–2 pages), or paste your details into the form manually.";
+      return res.status(422).json({ error: hint });
+    }
+
     console.log("[/api/parse-resume] parsed result:", JSON.stringify(parsed).slice(0, 400));
     res.json(parsed);
   } catch (err) {

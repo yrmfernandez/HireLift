@@ -113,6 +113,35 @@ main {
   align-items: center;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+}
+.logo svg { width: 100%; height: 100%; }
+.logo-bg {
+  fill: var(--accent);
+}
+.logo-stroke {
+  stroke: #fff;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  fill: none;
+}
+.logo-accent {
+  stroke: #c7d2fe;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
 .wordmark {
   font-family: var(--font-display);
   font-weight: 900;
