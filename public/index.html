@@ -9,10 +9,16 @@
   <meta name="description" content="Upload or paste your details and a job description. AI agents extract, write, and judge until your resume is ATS-ready — then suggest roles to target." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+  <!-- Ambient atmosphere (decorative, non-interactive) -->
+  <div class="arcane-bg" aria-hidden="true"></div>
+  <div class="stars" aria-hidden="true"></div>
+  <div class="grid-veil" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
   <header class="site-header">
     <div class="brand">
@@ -38,7 +44,8 @@
 
   <main>
     <section class="hero">
-      <h1>Get past the ATS filters. <span class="hero-sub">Closer to the interview.</span></h1>
+      <span class="hero-eyebrow"><span class="live" aria-hidden="true"></span> Four agents &middot; <span class="spark">Groq-powered</span> &middot; free to run</span>
+      <h1>Get past the <span class="gild">ATS filters</span>. <span class="hero-sub">Closer to the interview.</span></h1>
       <p class="hero-copy">Add the job post and your current resume. HireLift helps you spot what’s missing, sharpen what’s already there, and send a resume that matches the role more clearly.</p>
     </section>
 
@@ -293,5 +300,23 @@
   </footer>
 
   <script src="app.js"></script>
+  <script>
+    /* Soft pointer-follow glow — enhancement only. Off on touch + reduced motion. */
+    (function () {
+      var fine = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!fine || still) return;
+      var glow = document.getElementById("cursorGlow");
+      if (!glow) return;
+      document.body.classList.add("pointer-fine");
+      var x = innerWidth / 2, y = innerHeight / 2, tx = x, ty = y, raf = 0;
+      addEventListener("mousemove", function (e) { tx = e.clientX; ty = e.clientY; if (!raf) raf = requestAnimationFrame(move); }, { passive: true });
+      function move() {
+        raf = 0; x += (tx - x) * 0.18; y += (ty - y) * 0.18;
+        glow.style.transform = "translate3d(" + x + "px," + y + "px,0) translate(-50%,-50%)";
+        if (Math.abs(tx - x) > 0.5 || Math.abs(ty - y) > 0.5) raf = requestAnimationFrame(move);
+      }
+    })();
+  </script>
 </body>
 </html>
